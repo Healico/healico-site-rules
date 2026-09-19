@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Healico 站点规则完整文档</title>
+  <meta name="description" content="Healico 通用站点规则的完整参考：站点结构、选择器、URL 模板、章节与图片、请求协议、浏览器渲染、校验与调试。">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<header class="page-header">
+  <div class="wrap header-inner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">R</div>
+      <div><strong>Healico Rule Reference</strong><span>完整文档 · 通用格式 · 本地示例</span></div>
+    </div>
+    <nav class="site-nav" aria-label="文档导航">
+      <a href="../index.html">首页</a>
+      <a href="../zero-to-rule.html">零基础教程</a>
+      <a href="../capability-map.html">能力边界</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+  <article>
+    <header>
+      <div class="eyebrow">Complete reference</div>
+      <h1>Healico 站点规则完整文档</h1>
+      <p class="meta"><time datetime="2026-09-19">2026-09-19</time> · 通用站点配置</p>
+    </header>
+    <p>这是一套面向规则作者的完整参考文档。所有示例只使用本地地址 <code>127.0.0.1</code>、局域网地址或保留域名 <code>*.test</code>，不包含任何真实站点、账号、Cookie、Token、密钥或追踪代码。</p>
+    <div class="notice"><strong>文档原则：</strong>只传授通用规则知识与本地验证方法；不提供绕过登录、验证码、付费墙、访问控制或版权限制的方法。</div>
+
+    <section>
+      <h2>学习路线</h2>
+      <div class="pipeline" aria-label="规则学习路线">
+        <div class="step"><strong>结构</strong><span>站点入口与四阶段数据流</span></div>
+        <div class="step"><strong>选择器</strong><span>JSONPath / CSS / 正则</span></div>
+        <div class="step"><strong>分页</strong><span>URL 模板与下一页</span></div>
+        <div class="step"><strong>章节图片</strong><span>目录、图片与顺序处理</span></div>
+        <div class="step"><strong>协议</strong><span>请求步骤与响应步骤</span></div>
+        <div class="step"><strong>浏览器</strong><span>DOM、脚本与播放器</span></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>目录</h2>
+      <div class="card-grid">
+        <div class="card"><h3><a href="site-schema.html">1. 站点结构与顶层字段</a></h3><p>入口 URL、请求头、展示选项、页面配置和完整 JSON 骨架。</p></div>
+        <div class="card"><h3><a href="selectors.html">2. 选择器参考</a></h3><p>JSONPath、CSS、属性提取、函数链、正则和替换。</p></div>
+        <div class="card"><h3><a href="rule-fields.html">规则级字段总表</a></h3><p>RuleDef 支持的渲染、条目、分页、子规则和处理字段。</p></div>
+        <div class="card"><h3><a href="url-pagination.html">3. URL 模板与分页</a></h3><p>占位符、相对地址、下一页、偏移分页和循环防护。</p></div>
+        <div class="card"><h3><a href="chapters-gallery.html">4. 详情、章节与图片</a></h3><p>章节接口、图片列表、顺序还原和媒体字段。</p></div>
+        <div class="card"><h3><a href="request-profile.html">5. 请求协议配置</a></h3><p><code>requestProfile</code>、状态、签名步骤、响应步骤、恢复与缓存。</p></div>
+        <div class="card"><h3><a href="browser-media.html">6. 浏览器与媒体模式</a></h3><p><code>webDom</code>、浏览器脚本、图片密文与播放器模式。</p></div>
+        <div class="card"><h3><a href="validation-security.html">7. 校验与安全</a></h3><p>导入校验、旧字段拒绝、凭据边界和授权要求。</p></div>
+        <div class="card"><h3><a href="recipes-debugging.html">8. 模式与排错</a></h3><p>常见 JSON / HTML / 分页 / 协议写法和故障定位表。</p></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>核心数据流</h2>
+<pre><code>indexUrl ──► indexRule ──► idCode
+searchUrl ─► searchRule ─► idCode
+                         │
+detailUrl ◄──────────────┘
+   │
+   └─► detailRule ──► chapterRule / chaptersApi ──► cidCode
+                                                    │
+galleryUrl ◄────────────────────────────────────────┘
+   │
+   └─► galleryRule ──► image / video</code></pre>
+      <p>先让每一阶段独立可验证，再组合成完整规则。不要在列表未通过时直接编写图片规则。</p>
+    </section>
+
+    <section>
+      <h2>本地验证</h2>
+<pre><code>node scripts/serve-blog.cjs
+node scripts/test-rule-blog.cjs</code></pre>
+      <p>第一条命令启动本地博客与模拟接口；第二条命令验证站点文件、规则 JSON、接口分页、Skill 路径和文档页面。</p>
+    </section>
+  </article>
+</main>
+<footer><div class="wrap footer-inner"><p>完整规则文档 · 自包含静态页面 · 无外部脚本、无统计、无追踪。</p></div></footer>
+</body>
+</html>

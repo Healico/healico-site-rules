@@ -16,14 +16,14 @@ async function getJson(base, pathname) {
 }
 
 function allowedUrl(value) {
-  if (value.includes('你的IP')) return true;
+  if (value.includes('你的IP') || value.includes('.test')) return true;
   try {
     const url = new URL(value);
     const host = url.hostname;
     const privateIp = /^127\.0\.0\.1$/.test(host) || /^localhost$/.test(host) ||
       /^192\.168\.\d{1,3}\.\d{1,3}$/.test(host) || /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
       /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(host);
-    return privateIp || host === 'github.com' || host === 'healico.github.io' || host.includes('你的IP');
+    return privateIp || host === 'github.com' || host === 'healico.github.io' || host.endsWith('.test') || host.includes('你的IP');
   } catch {
     return false;
   }
@@ -52,11 +52,16 @@ async function main() {
   const indexHtml = await fs.readFile(path.join(root, 'site/index.html'), 'utf8');
   const zeroHtml = await fs.readFile(path.join(root, 'site/zero-to-rule.html'), 'utf8');
   const capabilityHtml = await fs.readFile(path.join(root, 'site/capability-map.html'), 'utf8');
+  const docsFiles = ['index.html', 'site-schema.html', 'selectors.html', 'rule-fields.html', 'url-pagination.html', 'chapters-gallery.html', 'request-profile.html', 'browser-media.html', 'validation-security.html', 'recipes-debugging.html'];
+  const docsHtml = await Promise.all(docsFiles.map(async name => await fs.readFile(path.join(root, 'site/docs', name), 'utf8')));
   const demoHtml = await fs.readFile(path.join(root, 'site/test-site/index.html'), 'utf8');
   const skill = await fs.readFile(path.join(root, 'skills/healico-rule-author/SKILL.md'), 'utf8');
   await assertNoExternalUrl(indexHtml, 'site/index.html');
   await assertNoExternalUrl(zeroHtml, 'site/zero-to-rule.html');
   await assertNoExternalUrl(capabilityHtml, 'site/capability-map.html');
+  for (let i = 0; i < docsFiles.length; i++) {
+    await assertNoExternalUrl(docsHtml[i], `site/docs/${docsFiles[i]}`);
+  }
   await assertNoExternalUrl(demoHtml, 'site/test-site/index.html');
   await assertNoExternalUrl(JSON.stringify(rule), 'site/rule-demo.json');
   await assertNoExternalUrl(skill, 'skills/healico-rule-author/SKILL.md');
@@ -68,6 +73,22 @@ async function main() {
   assert.match(capabilityHtml, /requestProfile\.steps/);
   assert.match(capabilityHtml, /需要请求签名或时间戳/);
   assert.match(indexHtml, /capability-map\.html/);
+  assert.match(indexHtml, /docs\/index\.html/);
+  assert.match(capabilityHtml, /docs\/index\.html/);
+  assert.match(docsHtml[0], /Healico 站点规则完整文档/);
+  assert.match(docsHtml[1], /站点结构与顶层字段/);
+  assert.match(docsHtml[2], /选择器参考/);
+  assert.match(docsHtml[3], /规则级字段总表/);
+  assert.match(docsHtml[4], /URL 模板与分页/);
+  assert.match(docsHtml[5], /详情、章节与图片/);
+  assert.match(docsHtml[6], /请求协议配置/);
+  assert.match(docsHtml[7], /浏览器与媒体模式/);
+  assert.match(docsHtml[8], /校验与安全/);
+  assert.match(docsHtml[9], /常见模式与排错/);
+  assert.match(skill, /## Top-level site fields/);
+  assert.match(skill, /## Request profile/);
+  assert.match(skill, /## Browser and media modes/);
+  assert.match(skill, /## Review checklist/);
   assert.match(indexHtml, /zero-to-rule\.html/);
 
   const deviceRule = buildDeviceRule(rule, '192.168.1.23', 8787);
@@ -116,6 +137,10 @@ async function main() {
     const blogResponse = await fetch(new URL('/', base));
     assert.equal(blogResponse.status, 200);
     assert.match(await blogResponse.text(), /Healico 站点规则怎么写/);
+
+    const docsResponse = await fetch(new URL('docs/index.html', base));
+    assert.equal(docsResponse.status, 200);
+    assert.match(await docsResponse.text(), /Healico 站点规则完整文档/);
 
     const capabilityResponse = await fetch(new URL('capability-map.html', base));
     assert.equal(capabilityResponse.status, 200);

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>规则级字段总表</title><link rel="stylesheet" href="../assets/styles.css"></head>
+<body><header class="page-header"><div class="wrap header-inner"><div class="brand"><div class="brand-mark">A</div><div><strong>规则文档</strong><span>字段总表</span></div></div><nav class="site-nav"><a href="selectors.html">选择器</a><a href="url-pagination.html">URL 与分页</a><a href="index.html">目录</a></nav></div></header>
+<main class="wrap"><article><h1>规则级字段总表</h1>
+<p>本页列出规则容器内可出现的字段。不是每条规则都需要全部字段；只写当前阶段实际需要的字段。</p>
+
+<section><h2>渲染与请求</h2>
+<table><thead><tr><th>字段</th><th>类型</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>renderMode</code></td><td>string</td><td><code>browserScript</code>、<code>contentEnvelope</code>、<code>playerEnvelope</code>。</td></tr>
+<tr><td><code>requestUrl</code></td><td>string</td><td>把章节链接重写为规范请求地址。</td></tr>
+<tr><td><code>requestUrlPattern</code></td><td>regex string</td><td>限制 <code>requestUrl</code> 何时生效。</td></tr>
+<tr><td><code>responseSteps</code></td><td>ValueStep[]</td><td>响应进入选择器前的处理步骤。</td></tr>
+<tr><td><code>playerSteps</code></td><td>ValueStep[]</td><td>播放器响应转媒体地址的步骤。</td></tr>
+<tr><td><code>browserRequest</code></td><td>boolean</td><td>章节响应改用浏览器 XHR。</td></tr>
+<tr><td><code>browserFallback</code></td><td>boolean</td><td>普通请求失败后有限回退到浏览器。</td></tr>
+<tr><td><code>preferWebView</code></td><td>boolean</td><td><code>contentEnvelope</code> 优先从浏览器读取变量。</td></tr>
+</tbody></table></section>
+
+<section><h2>浏览器脚本</h2>
+<table><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>xhrPath</code></td><td>页面加载后请求的同源路径。</td></tr>
+<tr><td><code>resultVar</code></td><td>结果所在的全局变量。</td></tr>
+<tr><td><code>pageVars</code></td><td>要读取的页面变量名数组。</td></tr>
+<tr><td><code>pageVarPrefix</code></td><td>页面变量名前缀。</td></tr>
+<tr><td><code>countVar</code></td><td>数量变量。</td></tr>
+<tr><td><code>browserPageStep</code></td><td>页码步长，1–100。</td></tr>
+</tbody></table></section>
+
+<section><h2>图片密文</h2>
+<table><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>keyVar</code></td><td>密钥变量名。</td></tr>
+<tr><td><code>cctVar</code></td><td>初始向量变量名。</td></tr>
+<tr><td><code>defaultCct</code></td><td>默认初始向量。</td></tr>
+</tbody></table></section>
+
+<section><h2>播放器</h2>
+<table><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>playerUrlPrefix</code></td><td>播放器页地址前缀。</td></tr>
+<tr><td><code>videoRule</code></td><td>从章节页提取播放器参数的规则。</td></tr>
+<tr><td><code>webPlayer</code></td><td>是否交给内嵌网页播放器。</td></tr>
+</tbody></table></section>
+
+<section><h2>条目与内容字段</h2>
+<table><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>item</code></td><td>条目数组或节点选择器。</td></tr>
+<tr><td><code>fallbackItem</code></td><td>主选择器无命中时的备用条目选择器。</td></tr>
+<tr><td><code>idCode</code></td><td>作品或章节 ID。</td></tr>
+<tr><td><code>title</code></td><td>标题。</td></tr>
+<tr><td><code>url</code></td><td>条目链接。</td></tr>
+<tr><td><code>cover</code></td><td>封面。</td></tr>
+<tr><td><code>coverWidth</code> / <code>coverHeight</code></td><td>封面尺寸。</td></tr>
+<tr><td><code>largeImage</code></td><td>大图。</td></tr>
+<tr><td><code>link</code></td><td>图片查看页链接。</td></tr>
+<tr><td><code>video</code></td><td>视频地址或播放器参数。</td></tr>
+<tr><td><code>category</code></td><td>分类。</td></tr>
+<tr><td><code>uploader</code></td><td>上传者。</td></tr>
+<tr><td><code>username</code></td><td>评论作者。</td></tr>
+<tr><td><code>content</code></td><td>评论内容。</td></tr>
+<tr><td><code>author</code></td><td>作者。</td></tr>
+<tr><td><code>datetime</code></td><td>时间。</td></tr>
+<tr><td><code>published</code></td><td>发布时间。</td></tr>
+<tr><td><code>rating</code></td><td>评分。</td></tr>
+<tr><td><code>tags</code></td><td>标签。</td></tr>
+<tr><td><code>pictures</code></td><td>预览图片数量或集合。</td></tr>
+<tr><td><code>desc</code></td><td>简介。</td></tr>
+<tr><td><code>duration</code></td><td>时长。</td></tr>
+<tr><td><code>views</code></td><td>观看数。</td></tr>
+<tr><td><code>likes</code></td><td>点赞数。</td></tr>
+<tr><td><code>photoAlbumLink</code></td><td>相册入口。</td></tr>
+<tr><td><code>secondLevelPageUrl</code></td><td>二级页面入口。</td></tr>
+<tr><td><code>image</code></td><td>原图地址。</td></tr>
+<tr><td><code>fallbackCoverUrl</code></td><td>详情封面为空时的模板地址。</td></tr>
+</tbody></table></section>
+
+<section><h2>分页与页码</h2>
+<table><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>nextPageUrl</code></td><td>下一页地址。</td></tr>
+<tr><td><code>nextPageButton</code></td><td>下一页按钮选择器。</td></tr>
+<tr><td><code>previewPageUrl</code></td><td>预览页地址。</td></tr>
+<tr><td><code>currentPageUrl</code></td><td>当前页地址。</td></tr>
+<tr><td><code>currentPageNum</code></td><td>当前页码。</td></tr>
+<tr><td><code>totalPages</code></td><td>总页数。</td></tr>
+<tr><td><code>totalImages</code></td><td>总图片数。</td></tr>
+<tr><td><code>pagination</code></td><td>偏移分页配置。</td></tr>
+<tr><td><code>maxPages</code></td><td>最大请求页数。</td></tr>
+</tbody></table></section>
+
+<section><h2>DOM 与子规则</h2>
+<table><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>webDom</code></td><td>是否等待客户端渲染后的 DOM。</td></tr>
+<tr><td><code>pageReadyMarker</code></td><td>DOM 就绪标记选择器。</td></tr>
+<tr><td><code>chapterRule</code></td><td>详情页内章节规则。</td></tr>
+<tr><td><code>tagRule</code></td><td>标签规则；其 <code>name</code> 是选择器。</td></tr>
+<tr><td><code>pictureRule</code></td><td>详情预览 / 查看页图片规则。</td></tr>
+<tr><td><code>commentRule</code></td><td>评论规则。</td></tr>
+<tr><td><code>videoRule</code></td><td>视频或播放器参数规则。</td></tr>
+<tr><td><code>chaptersApi</code></td><td>独立章节接口地址模板。</td></tr>
+<tr><td><code>chaptersApiRule</code></td><td>独立章节接口响应容器。</td></tr>
+<tr><td><code>currentPageAsChapter</code></td><td>把当前详情页插入为第一章。</td></tr>
+<tr><td><code>singleChapterWhenEmpty</code></td><td>无章节时视为单章。</td></tr>
+</tbody></table></section>
+
+<section><h2>图片处理</h2>
+<table><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>processing.orderPath</code></td><td>图片顺序数组路径。</td></tr>
+<tr><td><code>processing.urlPattern</code></td><td>图片地址替换正则。</td></tr>
+<tr><td><code>processing.urlReplacement</code></td><td>图片地址替换模板。</td></tr>
+<tr><td><code>processing.strips</code></td><td>图片分条还原配置。</td></tr>
+</tbody></table></section>
+
+<section><h2>规则内请求头</h2>
+<p>规则容器也接受字符串形式的 <code>httpHeaders</code>、<code>imageHTTPHeaders</code>、<code>videoHTTPHeaders</code>。常用做法是在站点顶层使用对象形式的阶段请求头；规则内字符串形式主要用于兼容旧结构，新增规则应优先使用顶层阶段字段。</p></section>
+</article></main><footer><div class="wrap footer-inner"><p>规则级字段总表。</p></div></footer></body></html>

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>详情、章节与图片</title><link rel="stylesheet" href="../assets/styles.css"></head>
+<body><header class="page-header"><div class="wrap header-inner"><div class="brand"><div class="brand-mark">4</div><div><strong>规则文档</strong><span>章节与图片</span></div></div><nav class="site-nav"><a href="url-pagination.html">上一章</a><a href="request-profile.html">下一章</a><a href="index.html">目录</a></nav></div></header>
+<main class="wrap"><article><h1>详情、章节与图片</h1>
+
+<section><h2>详情字段</h2>
+<table><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>title</code></td><td>作品标题。</td></tr>
+<tr><td><code>desc</code></td><td>简介。</td></tr>
+<tr><td><code>cover</code></td><td>详情封面。</td></tr>
+<tr><td><code>author</code> / <code>uploader</code> / <code>category</code></td><td>作者、上传者、分类。</td></tr>
+<tr><td><code>datetime</code> / <code>published</code></td><td>时间信息。</td></tr>
+<tr><td><code>rating</code></td><td>评分；引擎会尽力转换为数值。</td></tr>
+<tr><td><code>tags</code></td><td>标签集合。</td></tr>
+<tr><td><code>pictures</code></td><td>预览图片数量或集合。</td></tr>
+<tr><td><code>photoAlbumLink</code></td><td>相册入口。</td></tr>
+<tr><td><code>secondLevelPageUrl</code></td><td>二级页面入口。</td></tr>
+</tbody></table></section>
+
+<section><h2>章节来源一：详情页内解析</h2>
+<pre><code>"detailRule": {
+  "title": { "selector": "$.book.label" },
+  "chapterRule": {
+    "item": { "selector": "$.payload.chapters" },
+    "idCode": { "selector": "$.key" },
+    "title": { "selector": "$.label" },
+    "url": { "selector": "$.href" }
+  }
+}</code></pre>
+<p><code>chapterRule.item</code> 与 <code>idCode</code> 必填。章节 ID 为空的条目会被拒绝；重复 ID 按首次出现顺序去重。</p></section>
+
+<section><h2>章节来源二：独立章节接口</h2>
+<pre><code>"detailRule": {
+  "title": { "selector": "$.book.label" },
+  "chaptersApi": "/api/books/{idCode:}/chapters",
+  "chaptersApiRule": {
+    "maxPages": 20,
+    "chapterRule": {
+      "item": { "selector": "$.payload.entries" },
+      "idCode": { "selector": "$.key" },
+      "title": { "selector": "$.label" },
+      "url": { "selector": "$.href" }
+    },
+    "nextPageUrl": { "selector": "$.links.next" }
+  }
+}</code></pre>
+<ul><li><code>chaptersApiRule</code> 是响应容器；章节字段放在其 <code>chapterRule</code> 内。</li><li>接口使用 <code>detailHTTPHeaders</code>。</li><li>可省略章节 <code>url</code>，让 <code>galleryUrl</code> 由 <code>cidCode</code> 生成。</li><li>接口失败、JSON 无效、章节 ID 缺失或分页异常时，不应把部分目录报告为成功。</li></ul></section>
+
+<section><h2>单章与当前页</h2>
+<table><thead><tr><th>字段</th><th>作用</th></tr></thead><tbody>
+<tr><td><code>singleChapterWhenEmpty</code></td><td>详情没有章节时，把当前作品当作单章。</td></tr>
+<tr><td><code>currentPageAsChapter</code></td><td>把当前详情地址插入为第一章。</td></tr>
+<tr><td><code>fallbackItem</code></td><td>主章节选择器无命中时的备用选择器。</td></tr>
+</tbody></table></section>
+
+<section><h2>图片规则</h2>
+<pre><code>"galleryRule": {
+  "item": { "selector": "$.payload.pictures" },
+  "image": { "selector": "$.original" },
+  "link": { "selector": "$.viewer" },
+  "nextPageUrl": { "selector": "$.links.next" },
+  "totalImages": { "selector": "$.payload.total" }
+}</code></pre>
+<ul><li><code>item</code>：图片数组或图片节点。</li><li><code>image</code>：原图地址。</li><li><code>link</code>：二级查看页地址。</li><li><code>nextPageUrl</code>：图片分页地址。</li><li><code>totalImages</code>：已知总数时必须完整获得。</li></ul>
+<p>字符串数组可写为：</p><pre><code>{ "item": { "selector": "$" }, "image": { "selector": "this" } }</code></pre></section>
+
+<section><h2>图片顺序处理</h2>
+<p><code>galleryRule.processing</code> 用于显式处理顺序和地址：</p>
+<pre><code>"processing": {
+  "orderPath": "$.payload.order",
+  "urlPattern": "/thumb/(.*)$",
+  "urlReplacement": "/original/$1"
+}</code></pre>
+<table><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>orderPath</code></td><td>读取顺序数组；数量必须与图片数量一致。</td></tr>
+<tr><td><code>urlPattern</code></td><td>地址替换正则。</td></tr>
+<tr><td><code>urlReplacement</code></td><td>替换模板。</td></tr>
+<tr><td><code>strips</code></td><td>分条还原配置；算法固定为 <code>reverseStrips</code>。</td></tr>
+</tbody></table>
+<p><code>strips</code> 包含 <code>id</code>、<code>hash</code>、<code>bands</code>、<code>multiplier</code>、<code>add</code>。每个 band 可用 <code>min</code>、<code>max</code>、<code>count</code>、<code>modulus</code> 描述。顺序数据数量不符或槽位冲突时必须失败，不能静默输出乱序图片。</p></section>
+
+<section><h2>媒体字段</h2>
+<table><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>video</code></td><td>视频地址或播放器参数。</td></tr>
+<tr><td><code>duration</code> / <code>views</code> / <code>likes</code></td><td>时长与统计信息。</td></tr>
+<tr><td><code>largeImage</code></td><td>大图或封面。</td></tr>
+<tr><td><code>webPlayer</code></td><td>为 true 时把章节地址交给内嵌网页播放器。</td></tr>
+<tr><td><code>videoHTTPHeaders</code></td><td>媒体请求头。</td></tr>
+</tbody></table></section>
+</article></main><footer><div class="wrap footer-inner"><p>章节与图片参考。</p></div></footer></body></html>

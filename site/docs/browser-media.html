@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>浏览器与媒体模式</title><link rel="stylesheet" href="../assets/styles.css"></head>
+<body><header class="page-header"><div class="wrap header-inner"><div class="brand"><div class="brand-mark">6</div><div><strong>规则文档</strong><span>浏览器与媒体</span></div></div><nav class="site-nav"><a href="request-profile.html">上一章</a><a href="validation-security.html">下一章</a><a href="index.html">目录</a></nav></div></header>
+<main class="wrap"><article><h1>浏览器与媒体模式</h1>
+<p>浏览器相关能力是显式启用的。普通规则优先使用 HTTP 请求和声明式选择器；只有页面确实需要客户端渲染或浏览器执行环境时才使用这些模式。</p>
+
+<section><h2>DOM 渲染：<code>webDom</code></h2>
+<pre><code>"indexRule": {
+  "webDom": true,
+  "pageReadyMarker": { "selector": "main .book" },
+  "item": { "selector": "main .book" },
+  "idCode": { "selector": "[data-key]", "function": "attr", "param": "data-key" },
+  "title": { "selector": "h2" }
+}</code></pre>
+<ul><li><code>webDom: true</code> 表示先加载页面并等待 DOM。</li><li><code>pageReadyMarker.selector</code> 必填，必须是 CSS 选择器。</li><li>引擎只读取 DOM，不执行规则作者提供的 JavaScript。</li><li>页面在指定时间未出现标记时失败。</li></ul></section>
+
+<section><h2><code>browserScript</code></h2>
+<p>用于必须让浏览器执行站点返回脚本后才能获得数据的章节页。</p>
+<table><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>xhrPath</code></td><td>加载页面后发起的同源 GET 路径。</td></tr>
+<tr><td><code>resultVar</code></td><td>读取结果的全局变量名。</td></tr>
+<tr><td><code>pageVars</code></td><td>需要读取的页面变量列表。</td></tr>
+<tr><td><code>pageVarPrefix</code></td><td>页面变量前缀。</td></tr>
+<tr><td><code>countVar</code></td><td>图片数量变量。</td></tr>
+<tr><td><code>browserPageStep</code></td><td>每次请求的页码步长，范围 1–100。</td></tr>
+<tr><td><code>browserRequest</code></td><td>章节响应使用浏览器 XHR。</td></tr>
+<tr><td><code>browserFallback</code></td><td>普通请求失败后有限回退到浏览器请求。</td></tr>
+</tbody></table>
+<p>该模式会执行站点返回的脚本，属于高风险能力，只应在明确必要时启用。</p></section>
+
+<section><h2><code>contentEnvelope</code></h2>
+<p>用于图片密文数据。核心字段：</p>
+<table><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>keyVar</code></td><td>页面中密钥变量名。</td></tr>
+<tr><td><code>cctVar</code></td><td>页面中初始向量变量名。</td></tr>
+<tr><td><code>defaultCct</code></td><td>默认初始向量。</td></tr>
+<tr><td><code>preferWebView</code></td><td>优先通过浏览器读取变量。</td></tr>
+</tbody></table>
+<p><code>keyVar</code> 与 <code>cctVar</code> 必须是合法 JavaScript 标识符。解密失败或没有可用图片时必须报错，不能输出乱码。</p></section>
+
+<section><h2><code>playerEnvelope</code></h2>
+<p>用于播放器页参数与媒体地址提取。必须提供：</p>
+<ul><li><code>playerUrlPrefix</code></li><li><code>playerSteps</code></li><li><code>videoRule</code></li></ul>
+<p>流程是：先从章节页提取播放器参数，再请求播放器页，最后通过 <code>playerSteps</code> 把响应转换成媒体地址。</p></section>
+
+<section><h2>网页播放器</h2>
+<p><code>galleryRule.webPlayer: true</code> 会把解析出的章节地址交给内嵌网页播放器。它适合必须由网页播放器处理的媒体，不适合普通图片章节。</p></section>
+
+<section><h2>风险控制</h2><ul>
+<li>优先普通 HTTP + CSS / JSONPath。</li><li>其次 <code>webDom</code>。</li><li>最后才考虑 <code>browserScript</code>、<code>contentEnvelope</code>、<code>playerEnvelope</code>。</li><li>每个浏览器会话必须复用、排队并有超时。</li><li>旧回调不能完成新请求。</li><li>不能利用浏览器能力绕过登录、验证码或访问控制。</li>
+</ul></section>
+</article></main><footer><div class="wrap footer-inner"><p>浏览器与媒体参考。</p></div></footer></body></html>
