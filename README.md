@@ -27,7 +27,7 @@ npm run docs:dev
 node scripts/serve-blog.cjs
 ```
 
-文档地址：<http://127.0.0.1:5173/>
+文档地址：<http://127.0.0.1:5173/healico-site-rules/>
 
 模拟接口：<http://127.0.0.1:8787/api/books?page=1>
 

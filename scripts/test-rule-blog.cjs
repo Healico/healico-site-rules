@@ -84,6 +84,7 @@ async function main() {
   await assertNoThirdPartySiteMention(skill, 'SKILL.md');
   await assertNoThirdPartySiteMention(testSite, 'test-site/index.html');
 
+  assert.match(config, /base:\s*'\/healico-site-rules\/'/);
   assert.match(config, /provider:\s*'local'/);
   assert.match(config, /零基础跟做/);
   assert.match(config, /请求协议/);

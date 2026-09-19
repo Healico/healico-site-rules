@@ -2,6 +2,7 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   lang: 'zh-CN',
+  base: '/healico-site-rules/',
   title: 'Healico 站点规则',
   description: 'Healico 通用站点规则完整文档、零基础教程、本地测试站点与规则编写 Skill。',
   head: [

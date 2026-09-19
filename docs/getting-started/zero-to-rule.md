@@ -40,7 +40,7 @@ node scripts/serve-blog.cjs
 
 浏览器打开：
 
-- 文档：<http://127.0.0.1:5173/>
+- 文档：<http://127.0.0.1:5173/healico-site-rules/>
 - 列表接口：<http://127.0.0.1:8787/api/books?page=1>
 - 测试站：<http://127.0.0.1:8787/test-site/>
 
