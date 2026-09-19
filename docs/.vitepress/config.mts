@@ -31,8 +31,8 @@ export default defineConfig({
       { text: '开始', link: '/getting-started/zero-to-rule' },
       { text: '参考', link: '/reference/site-schema' },
       { text: '高级', link: '/reference/request-profile' },
-      { text: '规则示例', link: '/healico-site-rules/rule-demo.json' },
-      { text: 'Skill', link: '/downloads/healico-rule-author/SKILL.md' }
+      { text: '规则示例', link: 'https://healico.github.io/healico-site-rules/rule-demo.json' },
+      { text: 'Skill', link: 'https://healico.github.io/healico-site-rules/downloads/healico-rule-author/SKILL.md' }
     ],
     sidebar: [
       {
@@ -70,9 +70,9 @@ export default defineConfig({
       {
         text: '资源',
         items: [
-          { text: '规则示例', link: '/healico-site-rules/rule-demo.json' },
-          { text: '规则编写 Skill', link: '/downloads/healico-rule-author/SKILL.md' },
-          { text: '本地测试站', link: '/healico-site-rules/test-site/' }
+          { text: '规则示例', link: 'https://healico.github.io/healico-site-rules/rule-demo.json' },
+          { text: '规则编写 Skill', link: 'https://healico.github.io/healico-site-rules/downloads/healico-rule-author/SKILL.md' },
+          { text: '本地测试站', link: 'https://healico.github.io/healico-site-rules/test-site/' }
         ]
       }
     ]

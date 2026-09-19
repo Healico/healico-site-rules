@@ -144,7 +144,7 @@ node scripts/make-device-rule.cjs 192.168.1.23 8787
 
 ## 第 7 步：换用完整规则
 
-下载 [rule-demo.json](/healico-site-rules/rule-demo.json)，或查看 [站点结构](/reference/site-schema)。
+下载 [rule-demo.json](https://healico.github.io/healico-site-rules/rule-demo.json)，或查看 [站点结构](/reference/site-schema)。
 
 完整规则额外包含：
 

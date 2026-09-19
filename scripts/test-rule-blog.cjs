@@ -85,8 +85,9 @@ async function main() {
   await assertNoThirdPartySiteMention(testSite, 'test-site/index.html');
 
   assert.match(config, /base:\s*'\/healico-site-rules\/'/);
-  assert.match(config, /\/healico-site-rules\/rule-demo\.json/);
-  assert.match(config, /\/healico-site-rules\/test-site\//);
+  assert.match(config, /https:\/\/healico\.github\.io\/healico-site-rules\/rule-demo\.json/);
+  assert.match(config, /https:\/\/healico\.github\.io\/healico-site-rules\/downloads\/healico-rule-author\/SKILL\.md/);
+  assert.match(config, /https:\/\/healico\.github\.io\/healico-site-rules\/test-site\//);
   assert.match(config, /provider:\s*'local'/);
   assert.match(config, /零基础跟做/);
   assert.match(config, /请求协议/);
