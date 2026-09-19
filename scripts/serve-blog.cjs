@@ -4,11 +4,16 @@
 const http = require('node:http');
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const os = require('node:os');
 
 const repoRoot = path.resolve(__dirname, '..');
 const siteRoot = path.join(repoRoot, 'site');
 const skillPath = path.join(repoRoot, 'skills/healico-rule-author/SKILL.md');
 const defaultPort = Number(process.env.PORT || 8787);
+const args = new Set(process.argv.slice(2));
+const lanMode = args.has('--lan');
+const portIndex = process.argv.indexOf('--port');
+const cliPort = portIndex >= 0 ? Number(process.argv[portIndex + 1]) : defaultPort;
 
 const books = [
   {
@@ -94,6 +99,21 @@ function sendText(res, status, body, type = 'text/plain; charset=utf-8') {
   res.end(body);
 }
 
+function requestOrigin(req) {
+  const host = req.headers.host || `127.0.0.1:${req.socket.localPort}`;
+  return `http://${host}`;
+}
+
+function lanAddresses() {
+  const out = [];
+  for (const list of Object.values(os.networkInterfaces())) {
+    for (const item of list || []) {
+      if (item.family === 'IPv4' && !item.internal) out.push(item.address);
+    }
+  }
+  return [...new Set(out)];
+}
+
 function pageOf(query) {
   const raw = Number(query.get('page') || '1');
   return Number.isInteger(raw) && raw >= 1 && raw <= 100 ? raw : 1;
@@ -148,7 +168,7 @@ async function requestHandler(req, res) {
 
   if (pathname === '/api/books') {
     const page = pageOf(url.searchParams);
-    sendJson(res, 200, bookList(books.slice((page - 1) * 2, page * 2), `http://127.0.0.1:${req.socket.localPort}`, pathname, page));
+    sendJson(res, 200, bookList(books.slice((page - 1) * 2, page * 2), requestOrigin(req), pathname, page));
     return;
   }
 
@@ -156,7 +176,7 @@ async function requestHandler(req, res) {
     const page = pageOf(url.searchParams);
     const keyword = (url.searchParams.get('q') || '').trim();
     const found = keyword ? books.filter(book => book.label.includes(keyword) || book.key.includes(keyword)) : [];
-    sendJson(res, 200, bookList(found.slice((page - 1) * 2, page * 2), `http://127.0.0.1:${req.socket.localPort}`, pathname, page));
+    sendJson(res, 200, bookList(found.slice((page - 1) * 2, page * 2), requestOrigin(req), pathname, page));
     return;
   }
 
@@ -193,7 +213,7 @@ async function requestHandler(req, res) {
     const first = (page - 1) * 2 + 1;
     const pictures = [first, first + 1].map(number => ({
       index: number,
-      original: `http://127.0.0.1:${req.socket.localPort}/api/image/${images[1]}/${number}`
+      original: `${requestOrigin(req)}/api/image/${images[1]}/${number}`
     }));
     sendJson(res, 200, {
       payload: { pictures },
@@ -219,20 +239,27 @@ async function requestHandler(req, res) {
   await serveStatic(req, res, pathname);
 }
 
-function startServer(port = defaultPort) {
+function startServer(port = defaultPort, host = '127.0.0.1') {
   const server = http.createServer(requestHandler);
   return new Promise((resolve, reject) => {
     server.once('error', reject);
-    server.listen(port, '127.0.0.1', () => resolve(server));
+    server.listen(port, host, () => resolve(server));
   });
 }
 
 if (require.main === module) {
-  startServer(defaultPort).then(server => {
+  startServer(cliPort, lanMode ? '0.0.0.0' : '127.0.0.1').then(server => {
     const address = server.address();
-    const actualPort = typeof address === 'object' && address ? address.port : defaultPort;
+    const actualPort = typeof address === 'object' && address ? address.port : cliPort;
     console.log(`Healico rule blog: http://127.0.0.1:${actualPort}/`);
     console.log(`Local test API:   http://127.0.0.1:${actualPort}/api/books?page=1`);
+    if (lanMode) {
+      for (const ip of lanAddresses()) {
+        console.log(`LAN rule blog:    http://${ip}:${actualPort}/`);
+        console.log(`LAN test API:     http://${ip}:${actualPort}/api/books?page=1`);
+      }
+      console.log(`Generate device rule: node scripts/make-device-rule.cjs <上面的IPv4> ${actualPort}`);
+    }
     console.log('Press Ctrl+C to stop.');
   }).catch(error => {
     console.error(error.message);

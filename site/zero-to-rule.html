@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>零基础写出第一条 Healico 站点规则</title>
+  <meta name="description" content="面向第一次接触 JSON 和站点规则的用户：从安装 Node.js、启动本地测试站、看懂接口响应，到导入 Healico 并验证列表、搜索、详情和图片分页。">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<header class="page-header">
+  <div class="wrap header-inner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">0</div>
+      <div>
+        <strong>Healico Rule Blog</strong>
+        <span>零基础 · 每一步都有命令和验收结果</span>
+      </div>
+    </div>
+    <nav class="site-nav" aria-label="页面导航">
+      <a href="index.html">总览</a>
+      <a href="#prepare">准备</a>
+      <a href="#run">启动</a>
+      <a href="#import">导入</a>
+      <a href="#verify">验收</a>
+      <a href="rule-demo.json">完整规则</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <article>
+    <header>
+      <div class="eyebrow">Zero to rule</div>
+      <h1>零基础写出第一条 Healico 站点规则</h1>
+      <p class="meta"><time datetime="2026-09-19">2026-09-19</time> · 跟做版教程</p>
+    </header>
+
+    <p>这篇教程不要求你先懂爬虫、JSONPath 或 Healico 源码。你只需要按顺序执行命令、打开页面、复制一份 JSON，最后在 Healico 里看到本地测试数据。整个过程只访问你自己电脑上的测试服务，不需要任何第三方站点账号。</p>
+
+    <div class="lesson-summary">
+      <div class="card"><h3>你会得到</h3><p>一条能显示列表、搜索、详情、章节和图片分页的本地规则。</p></div>
+      <div class="card"><h3>需要准备</h3><p>一台电脑、Node.js 18+、文本编辑器；可选：装有 Healico 的设备。</p></div>
+      <div class="card"><h3>预计时间</h3><p>第一次跟做约 20–30 分钟。</p></div>
+      <div class="card"><h3>安全边界</h3><p>只使用本地合成数据，不包含 Cookie、Token 或真实站点。</p></div>
+    </div>
+
+    <section class="lesson-step" id="prepare">
+      <h2>第 1 步：确认电脑能运行 Node.js</h2>
+      <p class="step-goal">目标：终端里能显示 Node.js 版本，且版本不低于 18。</p>
+      <p>打开 macOS 的「终端」或 Windows 的「PowerShell」，输入：</p>
+      <span class="command-label">命令</span>
+<pre><code>node --version</code></pre>
+      <div class="expected"><strong>验收：</strong>看到类似 <code>v22.11.0</code> 的版本号即可。第一位数字是 18、20、22 或更高都可以。</div>
+      <p>如果提示 <code>command not found</code>，先安装 Node.js 的 LTS 版本，安装完成后重新打开终端，再执行一次 <code>node --version</code>。</p>
+    </section>
+
+    <section class="lesson-step" id="run">
+      <h2>第 2 步：下载教程仓库并启动本地测试站</h2>
+      <p class="step-goal">目标：浏览器能打开本地博客和 JSON 接口。</p>
+      <span class="command-label">命令 1：下载仓库</span>
+<pre><code>git clone https://github.com/Healico/healico-site-rules.git
+cd healico-site-rules</code></pre>
+      <span class="command-label">命令 2：启动服务</span>
+<pre><code>node scripts/serve-blog.cjs</code></pre>
+      <div class="expected"><strong>验收：</strong>终端出现类似下面的输出：
+<pre><code>Healico rule blog: http://127.0.0.1:8787/
+Local test API:   http://127.0.0.1:8787/api/books?page=1
+Press Ctrl+C to stop.</code></pre>
+      </div>
+      <p>保持这个终端窗口不要关闭。然后在浏览器打开：</p>
+      <ul>
+        <li><a href="http://127.0.0.1:8787/">http://127.0.0.1:8787/</a>：教程首页</li>
+        <li><a href="http://127.0.0.1:8787/api/books?page=1">http://127.0.0.1:8787/api/books?page=1</a>：列表接口</li>
+        <li><a href="http://127.0.0.1:8787/test-site/">http://127.0.0.1:8787/test-site/</a>：人类可读测试站</li>
+      </ul>
+      <div class="expected"><strong>验收：</strong>列表接口能看到 <code>star-atlas</code>、<code>paper-lighthouse</code>，并且 <code>links.next</code> 指向第 2 页。</div>
+    </section>
+
+    <section class="lesson-step" id="read-json">
+      <h2>第 3 步：先看懂接口，再写规则</h2>
+      <p class="step-goal">目标：知道每个规则字段对应 JSON 响应里的哪个位置。</p>
+      <p>浏览器打开列表接口后，你会看到类似数据：</p>
+<pre><code>{
+  "payload": {
+    "books": [
+      {
+        "key": "star-atlas",
+        "label": "星图旅记",
+        "cover": "http://127.0.0.1:8787/api/cover/star-atlas"
+      }
+    ]
+  },
+  "links": {
+    "next": "/api/books?page=2"
+  }
+}</code></pre>
+      <p>规则不是凭空写的，而是逐项回答下面的问题：</p>
+      <table class="mapping-table">
+        <thead><tr><th>问题</th><th>JSON 里的答案</th><th>规则字段</th></tr></thead>
+        <tbody>
+          <tr><td>列表数组在哪里？</td><td><code>payload.books</code></td><td><code>indexRule.item.selector</code></td></tr>
+          <tr><td>每条内容的唯一 ID？</td><td><code>key</code></td><td><code>indexRule.idCode.selector</code></td></tr>
+          <tr><td>标题？</td><td><code>label</code></td><td><code>indexRule.title.selector</code></td></tr>
+          <tr><td>封面？</td><td><code>cover</code></td><td><code>indexRule.cover.selector</code></td></tr>
+          <tr><td>下一页在哪里？</td><td><code>links.next</code></td><td><code>indexRule.nextPageUrl.selector</code></td></tr>
+        </tbody>
+      </table>
+      <div class="notice"><strong>最容易犯的错：</strong><code>item</code> 和 <code>nextPageUrl</code> 是从响应根对象开始找；<code>idCode</code>、<code>title</code>、<code>cover</code> 是从每个数组元素内部开始找。</div>
+    </section>
+
+    <section class="lesson-step" id="first-rule">
+      <h2>第 4 步：保存你的第一条最小规则</h2>
+      <p class="step-goal">目标：得到一个可以导入的 <code>my-first-rule.json</code> 文件。</p>
+      <p>用文本编辑器新建一个文件，命名为 <code>my-first-rule.json</code>，保存到仓库目录，内容如下：</p>
+<pre><code>{
+  "name": "我的第一条规则",
+  "domain": "127.0.0.1:8787",
+  "indexUrl": "http://127.0.0.1:8787/api/books?page={page:1}",
+  "indexRule": {
+    "item": { "selector": "$.payload.books" },
+    "idCode": { "selector": "$.key" },
+    "title": { "selector": "$.label" },
+    "cover": { "selector": "$.cover" },
+    "nextPageUrl": { "selector": "$.links.next" }
+  }
+}</code></pre>
+      <p>逐行解释：</p>
+      <ul>
+        <li><code>name</code>：在 Healico 里显示的站点名。</li>
+        <li><code>domain</code>：站点主机，这里是本机测试服务。</li>
+        <li><code>indexUrl</code>：第一页列表地址；<code>{page:1}</code> 表示页码从 1 开始。</li>
+        <li><code>item</code>：告诉引擎“每个作品是一个数组元素”。</li>
+        <li><code>idCode</code>：作品的唯一标识，用来进入详情。</li>
+        <li><code>title</code> / <code>cover</code>：列表卡片显示的文字和封面。</li>
+        <li><code>nextPageUrl</code>：下一页地址；接口返回 <code>null</code> 时停止翻页。</li>
+      </ul>
+      <div class="expected"><strong>验收：</strong>文件保存后，在仓库目录执行下面的命令，没有输出即为通过：</div>
+<pre><code>node -e "JSON.parse(require('fs').readFileSync('my-first-rule.json','utf8')); console.log('JSON OK')"</code></pre>
+    </section>
+
+    <section class="lesson-step" id="import">
+      <h2>第 5 步：把规则导入 Healico</h2>
+      <p class="step-goal">目标：Healico 显示「已导入站点」。</p>
+
+      <h3>情况 A：Healico 运行在这台电脑或同一模拟器里</h3>
+      <ol>
+        <li>打开 Healico 首页。</li>
+        <li>点击右上角「文件导入」。</li>
+        <li>选择刚才保存的 <code>my-first-rule.json</code>。</li>
+        <li>看到「已导入站点：我的第一条规则」。</li>
+      </ol>
+      <p>也可以点击导入面板里的文本框，把 JSON 全部粘贴进去，再点击「导入」。</p>
+
+      <h3>情况 B：Healico 安装在手机或平板上</h3>
+      <p><code>127.0.0.1</code> 表示「当前设备自己」，手机访问电脑时不能用它。请让手机和电脑连接同一个 Wi-Fi，然后按下面做。</p>
+      <span class="command-label">命令 1：让服务开放给局域网</span>
+<pre><code>node scripts/serve-blog.cjs --lan</code></pre>
+      <p>终端会额外输出类似 <code>http://192.168.1.23:8787/</code> 的地址。把其中的 <code>192.168.1.23</code> 换成你自己的 IP。</p>
+      <span class="command-label">命令 2：生成手机可用的规则</span>
+<pre><code>node scripts/make-device-rule.cjs 192.168.1.23 8787</code></pre>
+      <p>这会生成 <code>device-rule.json</code>。把它传到手机后，在 Healico 首页点击「文件导入」并选择这个文件。</p>
+      <div class="notice warning"><strong>如果打不开：</strong>先确认手机浏览器能打开 <code>http://你的IP:8787/</code>。如果电脑防火墙询问是否允许 Node.js 入站连接，需要允许。</div>
+    </section>
+
+    <section class="lesson-step" id="verify">
+      <h2>第 6 步：按清单验收每个阶段</h2>
+      <p class="step-goal">目标：确认列表、翻页、搜索、详情、章节和图片都按预期工作。</p>
+      <ul class="checklist">
+        <li>打开「我的第一条规则」，能看到 2 本作品。</li>
+        <li>翻到第 2 页，能看到 1 本作品，且没有第 3 页。</li>
+        <li>搜索「星」，只出现《星图旅记》。</li>
+        <li>搜索一个不存在的词，例如「不存在」，列表为空且应用不崩溃。</li>
+        <li>打开《星图旅记》，能看到标题和简介。</li>
+        <li>章节目录显示 12 话，第一话 ID 是 <code>star-atlas-1</code>。</li>
+        <li>打开第一话，能看到第 1、2 页图片。</li>
+        <li>继续翻页，总共看到 4 张图片后停止。</li>
+      </ul>
+      <p>如果最小规则只完成了前两项，这是正常的；完整规则请继续使用下一节的 <code>rule-demo.json</code>。</p>
+    </section>
+
+    <section class="lesson-step" id="full-rule">
+      <h2>第 7 步：换用完整规则，补齐搜索、详情和图片</h2>
+      <p class="step-goal">目标：理解完整规则如何把四个阶段连起来。</p>
+      <p>下载或打开完整示例：</p>
+      <div class="action-row">
+        <a class="button primary" href="rule-demo.json" download>下载 rule-demo.json</a>
+        <a class="button" href="rule-demo.json">在浏览器查看</a>
+      </div>
+      <p>完整规则比最小规则多出四个入口：</p>
+      <table>
+        <thead><tr><th>入口</th><th>作用</th><th>关键占位符</th></tr></thead>
+        <tbody>
+          <tr><td><code>searchUrl</code> + <code>searchRule</code></td><td>关键词搜索</td><td><code>{keyword:}</code></td></tr>
+          <tr><td><code>detailUrl</code> + <code>detailRule</code></td><td>作品详情</td><td><code>{idCode:}</code></td></tr>
+          <tr><td><code>detailRule.chaptersApi</code></td><td>章节目录接口</td><td><code>{idCode:}</code></td></tr>
+          <tr><td><code>galleryUrl</code> + <code>galleryRule</code></td><td>章节图片</td><td><code>{cidCode:}</code></td></tr>
+        </tbody>
+      </table>
+      <p>数据流是：</p>
+      <div class="pipeline" aria-label="Healico 数据流">
+        <div class="step"><strong>列表</strong><span>得到 idCode</span></div>
+        <div class="step"><strong>搜索</strong><span>得到搜索结果</span></div>
+        <div class="step"><strong>详情</strong><span>用 idCode 请求详情</span></div>
+        <div class="step"><strong>章节</strong><span>得到 cidCode</span></div>
+        <div class="step"><strong>图片</strong><span>用 cidCode 请求图片</span></div>
+      </div>
+    </section>
+
+    <section class="lesson-step" id="practice">
+      <h2>第 8 步：改一点数据，确认你真的掌握了</h2>
+      <p class="step-goal">目标：通过修改本地测试数据，观察规则输出变化。</p>
+      <p>打开 <code>scripts/serve-blog.cjs</code>，找到：</p>
+<pre><code>{
+  key: 'star-atlas',
+  label: '星图旅记',
+  summary: '一名制图师在本地测试数据中整理星区航线的合成故事。',
+  chapters: 12
+}</code></pre>
+      <p>把 <code>label</code> 改成任意名字，保存文件。回到终端按 <code>Ctrl+C</code> 停止服务，再执行：</p>
+<pre><code>node scripts/serve-blog.cjs</code></pre>
+      <p>重新打开列表或搜索，你会看到新名字。这说明规则没有写死标题，而是从接口响应里读取字段。</p>
+      <div class="expected"><strong>验收：</strong>修改 <code>label</code> 后，Healico 列表标题同步变化；把 <code>chapters</code> 改成 3 后，详情只显示 3 话。</div>
+    </section>
+
+    <section class="lesson-step" id="your-own">
+      <h2>第 9 步：为自己的接口写规则</h2>
+      <p class="step-goal">目标：不再照抄示例，而是能按问题填空。</p>
+      <p>先确认你有权访问并解析该接口。然后回答 8 个问题：</p>
+      <ol>
+        <li>列表第一页 URL 是什么？</li>
+        <li>列表数组在响应里的路径是什么？</li>
+        <li>唯一 ID 字段是什么？</li>
+        <li>标题字段是什么？</li>
+        <li>封面字段是什么？</li>
+        <li>下一页字段是什么？没有下一页时返回什么？</li>
+        <li>详情 URL 怎么由 <code>idCode</code> 拼出来？</li>
+        <li>章节图片 URL 怎么由 <code>cidCode</code> 拼出来？</li>
+      </ol>
+      <p>按答案填这个骨架：</p>
+<pre><code>{
+  "name": "你的站点名",
+  "domain": "你的主机名",
+  "indexUrl": "列表第一页地址?page={page:1}",
+  "searchUrl": "搜索地址?q={keyword:}&page={page:1}",
+  "detailUrl": "详情地址/{idCode:}",
+  "galleryUrl": "图片地址/{cidCode:}?page={page:1}",
+  "indexRule": {
+    "item": { "selector": "$.这里填列表数组路径" },
+    "idCode": { "selector": "$.这里填ID字段" },
+    "title": { "selector": "$.这里填标题字段" },
+    "cover": { "selector": "$.这里填封面字段" },
+    "nextPageUrl": { "selector": "$.这里填下一页字段" }
+  },
+  "searchRule": {
+    "item": { "selector": "$.这里填搜索数组路径" },
+    "idCode": { "selector": "$.key" },
+    "title": { "selector": "$.label" },
+    "nextPageUrl": { "selector": "$.links.next" }
+  },
+  "detailRule": {
+    "title": { "selector": "$.book.label" },
+    "desc": { "selector": "$.book.summary" },
+    "chaptersApi": "/api/books/{idCode:}/chapters",
+    "chaptersApiRule": {
+      "maxPages": 20,
+      "chapterRule": {
+        "item": { "selector": "$.payload.entries" },
+        "idCode": { "selector": "$.key" },
+        "title": { "selector": "$.label" },
+        "url": { "selector": "$.href" }
+      },
+      "nextPageUrl": { "selector": "$.links.next" }
+    }
+  },
+  "galleryRule": {
+    "item": { "selector": "$.payload.pictures" },
+    "image": { "selector": "$.original" },
+    "nextPageUrl": { "selector": "$.links.next" }
+  }
+}</code></pre>
+      <p>保存后先确认 JSON 语法，再按「列表 → 详情 → 图片 → 搜索」的顺序测试。不要一开始就写完整规则；每一阶段通过后再加下一阶段。</p>
+    </section>
+
+    <section class="lesson-step" id="troubleshoot">
+      <h2>常见问题</h2>
+      <details>
+        <summary>列表为空，提示没有匹配项</summary>
+        <p>优先检查 <code>item.selector</code> 是否真的指向数组。记住 <code>$.payload.books</code> 是从响应根对象开始，不是从某个数组元素开始。</p>
+      </details>
+      <details>
+        <summary>有列表，但点进详情失败</summary>
+        <p>检查 <code>detailUrl</code> 里的 <code>{idCode:}</code> 是否能替换成列表里的 <code>key</code>。可以在浏览器手动拼出详情 URL 测试。</p>
+      </details>
+      <details>
+        <summary>章节为空</summary>
+        <p>检查 <code>chaptersApiRule.chapterRule.item</code> 和 <code>idCode</code>。章节字段在 <code>chapterRule</code> 里，不在 <code>chaptersApiRule</code> 根上。</p>
+      </details>
+      <details>
+        <summary>图片为空</summary>
+        <p>先在浏览器打开 <code>galleryUrl</code>，确认响应里确实有图片数组；再检查 <code>galleryRule.item</code> 与 <code>image.selector</code>。</p>
+      </details>
+      <details>
+        <summary>手机导入后无法访问</summary>
+        <p>不要用 <code>127.0.0.1</code>。使用 <code>node scripts/serve-blog.cjs --lan</code>，生成 <code>device-rule.json</code>，并确认手机和电脑在同一 Wi-Fi。</p>
+      </details>
+      <details>
+        <summary>JSON 导入失败</summary>
+        <p>通常是多余逗号、少引号或注释。JSON 不支持 <code>// 注释</code>，先运行教程里的 JSON 语法检查命令。</p>
+      </details>
+    </section>
+
+    <section class="lesson-step">
+      <h2>最后检查</h2>
+      <ul class="checklist">
+        <li>我使用的是自己有权访问的内容或本地测试数据。</li>
+        <li>规则里没有 Cookie、Token、密码、签名密钥。</li>
+        <li>列表、详情、章节、图片、搜索逐项测试通过。</li>
+        <li>分页能停止，没有无限循环。</li>
+        <li>我不会用规则绕过登录、验证码、付费墙或版权限制。</li>
+      </ul>
+    </section>
+  </article>
+</main>
+
+<footer>
+  <div class="wrap footer-inner">
+    <p>零基础跟做教程 · 本地合成数据 · 无外部脚本、无统计、无追踪。</p>
+  </div>
+</footer>
+</body>
+</html>

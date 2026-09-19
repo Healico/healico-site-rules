@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { startServer } = require('./serve-blog.cjs');
+const { buildDeviceRule } = require('./make-device-rule.cjs');
 
 const root = path.resolve(__dirname, '..');
 
@@ -14,11 +15,24 @@ async function getJson(base, pathname) {
   return await response.json();
 }
 
+function allowedUrl(value) {
+  if (value.includes('你的IP')) return true;
+  try {
+    const url = new URL(value);
+    const host = url.hostname;
+    const privateIp = /^127\.0\.0\.1$/.test(host) || /^localhost$/.test(host) ||
+      /^192\.168\.\d{1,3}\.\d{1,3}$/.test(host) || /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
+      /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(host);
+    return privateIp || host === 'github.com' || host === 'healico.github.io' || host.includes('你的IP');
+  } catch {
+    return false;
+  }
+}
+
 async function assertNoExternalUrl(text, label) {
   const matches = [...text.matchAll(/https?:\/\/[^\s"'<>)]+/g)].map(match => match[0]);
   for (const value of matches) {
-    const allowed = value.startsWith('http://127.0.0.1:') || value.startsWith('http://localhost:');
-    assert.ok(allowed, `${label} contains a non-local URL: ${value}`);
+    assert.ok(allowedUrl(value), `${label} contains a non-approved URL: ${value}`);
   }
 }
 
@@ -36,14 +50,25 @@ async function main() {
   }
 
   const indexHtml = await fs.readFile(path.join(root, 'site/index.html'), 'utf8');
+  const zeroHtml = await fs.readFile(path.join(root, 'site/zero-to-rule.html'), 'utf8');
   const demoHtml = await fs.readFile(path.join(root, 'site/test-site/index.html'), 'utf8');
   const skill = await fs.readFile(path.join(root, 'skills/healico-rule-author/SKILL.md'), 'utf8');
   await assertNoExternalUrl(indexHtml, 'site/index.html');
+  await assertNoExternalUrl(zeroHtml, 'site/zero-to-rule.html');
   await assertNoExternalUrl(demoHtml, 'site/test-site/index.html');
   await assertNoExternalUrl(JSON.stringify(rule), 'site/rule-demo.json');
   await assertNoExternalUrl(skill, 'skills/healico-rule-author/SKILL.md');
   assert.match(skill, /node scripts\/lint-rules\.cjs/);
   assert.match(skill, /Do not include cookies, tokens, passwords/);
+  assert.match(zeroHtml, /第 1 步：确认电脑能运行 Node\.js/);
+  assert.match(zeroHtml, /第 9 步：为自己的接口写规则/);
+  assert.match(indexHtml, /zero-to-rule\.html/);
+
+  const deviceRule = buildDeviceRule(rule, '192.168.1.23', 8787);
+  assert.equal(deviceRule.name, '局域网规则演示');
+  assert.equal(deviceRule.domain, '192.168.1.23:8787');
+  assert.equal(deviceRule.indexUrl, 'http://192.168.1.23:8787/api/books?page={page:1}');
+  await assertNoExternalUrl(JSON.stringify(deviceRule), 'generated device rule');
 
   const server = await startServer(0);
   try {
@@ -55,6 +80,7 @@ async function main() {
     const page1 = await getJson(base, 'api/books?page=1');
     assert.equal(page1.payload.books.length, 2);
     assert.equal(page1.payload.books[0].key, 'star-atlas');
+    assert.equal(page1.payload.books[0].cover, `${base}api/cover/star-atlas`);
     assert.equal(page1.links.next, '/api/books?page=2');
     const page2 = await getJson(base, 'api/books?page=2');
     assert.equal(page2.payload.books.length, 1);
@@ -84,6 +110,10 @@ async function main() {
     const blogResponse = await fetch(new URL('/', base));
     assert.equal(blogResponse.status, 200);
     assert.match(await blogResponse.text(), /Healico 站点规则怎么写/);
+
+    const lessonResponse = await fetch(new URL('zero-to-rule.html', base));
+    assert.equal(lessonResponse.status, 200);
+    assert.match(await lessonResponse.text(), /零基础写出第一条 Healico 站点规则/);
   } finally {
     await new Promise(resolve => server.close(resolve));
   }
