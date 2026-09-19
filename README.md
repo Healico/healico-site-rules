@@ -4,6 +4,7 @@ Healico 通用站点规则编写指南、完整规则示例、离线测试站点
 
 - 在线指南：<https://healico.github.io/healico-site-rules/>
 - 零基础跟做教程：<https://healico.github.io/healico-site-rules/zero-to-rule.html>
+- 能力边界与学习路线：<https://healico.github.io/healico-site-rules/capability-map.html>
 - 规则示例：[`site/rule-demo.json`](site/rule-demo.json)
 - 规则编写 Skill：[`skills/healico-rule-author/SKILL.md`](skills/healico-rule-author/SKILL.md)
 

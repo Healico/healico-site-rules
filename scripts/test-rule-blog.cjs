@@ -51,10 +51,12 @@ async function main() {
 
   const indexHtml = await fs.readFile(path.join(root, 'site/index.html'), 'utf8');
   const zeroHtml = await fs.readFile(path.join(root, 'site/zero-to-rule.html'), 'utf8');
+  const capabilityHtml = await fs.readFile(path.join(root, 'site/capability-map.html'), 'utf8');
   const demoHtml = await fs.readFile(path.join(root, 'site/test-site/index.html'), 'utf8');
   const skill = await fs.readFile(path.join(root, 'skills/healico-rule-author/SKILL.md'), 'utf8');
   await assertNoExternalUrl(indexHtml, 'site/index.html');
   await assertNoExternalUrl(zeroHtml, 'site/zero-to-rule.html');
+  await assertNoExternalUrl(capabilityHtml, 'site/capability-map.html');
   await assertNoExternalUrl(demoHtml, 'site/test-site/index.html');
   await assertNoExternalUrl(JSON.stringify(rule), 'site/rule-demo.json');
   await assertNoExternalUrl(skill, 'skills/healico-rule-author/SKILL.md');
@@ -62,6 +64,10 @@ async function main() {
   assert.match(skill, /Do not include cookies, tokens, passwords/);
   assert.match(zeroHtml, /第 1 步：确认电脑能运行 Node\.js/);
   assert.match(zeroHtml, /第 9 步：为自己的接口写规则/);
+  assert.match(capabilityHtml, /当前还没有完整讲解/);
+  assert.match(capabilityHtml, /requestProfile\.steps/);
+  assert.match(capabilityHtml, /需要请求签名或时间戳/);
+  assert.match(indexHtml, /capability-map\.html/);
   assert.match(indexHtml, /zero-to-rule\.html/);
 
   const deviceRule = buildDeviceRule(rule, '192.168.1.23', 8787);
@@ -110,6 +116,10 @@ async function main() {
     const blogResponse = await fetch(new URL('/', base));
     assert.equal(blogResponse.status, 200);
     assert.match(await blogResponse.text(), /Healico 站点规则怎么写/);
+
+    const capabilityResponse = await fetch(new URL('capability-map.html', base));
+    assert.equal(capabilityResponse.status, 200);
+    assert.match(await capabilityResponse.text(), /学完这个站，能写哪类 Healico 站点规则/);
 
     const lessonResponse = await fetch(new URL('zero-to-rule.html', base));
     assert.equal(lessonResponse.status, 200);
