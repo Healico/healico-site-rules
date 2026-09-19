@@ -1,0 +1,45 @@
+{
+  "name": "本地规则演示",
+  "domain": "127.0.0.1:8787",
+  "indexUrl": "http://127.0.0.1:8787/api/books?page={page:1}",
+  "searchUrl": "http://127.0.0.1:8787/api/search?q={keyword:}&page={page:1}",
+  "detailUrl": "http://127.0.0.1:8787/api/books/{idCode:}",
+  "galleryUrl": "http://127.0.0.1:8787/api/chapters/{cidCode:}/images?page={page:1}",
+  "httpHeaders": {
+    "Accept": "application/json"
+  },
+  "indexRule": {
+    "item": { "selector": "$.payload.books" },
+    "idCode": { "selector": "$.key" },
+    "title": { "selector": "$.label" },
+    "cover": { "selector": "$.cover" },
+    "nextPageUrl": { "selector": "$.links.next" }
+  },
+  "searchRule": {
+    "item": { "selector": "$.payload.books" },
+    "idCode": { "selector": "$.key" },
+    "title": { "selector": "$.label" },
+    "cover": { "selector": "$.cover" },
+    "nextPageUrl": { "selector": "$.links.next" }
+  },
+  "detailRule": {
+    "title": { "selector": "$.book.label" },
+    "desc": { "selector": "$.book.summary" },
+    "chaptersApi": "/api/books/{idCode:}/chapters",
+    "chaptersApiRule": {
+      "maxPages": 20,
+      "chapterRule": {
+        "item": { "selector": "$.payload.entries" },
+        "idCode": { "selector": "$.key" },
+        "title": { "selector": "$.label" },
+        "url": { "selector": "$.href" }
+      },
+      "nextPageUrl": { "selector": "$.links.next" }
+    }
+  },
+  "galleryRule": {
+    "item": { "selector": "$.payload.pictures" },
+    "image": { "selector": "$.original" },
+    "nextPageUrl": { "selector": "$.links.next" }
+  }
+}

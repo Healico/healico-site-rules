@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Healico 站点规则编写指南</title>
+  <meta name="description" content="一篇自包含的 Healico 通用站点规则教程，包含字段说明、完整 JSON 示例、离线测试站点和可下载规则编写 Skill。">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<header class="page-header">
+  <div class="wrap header-inner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">H</div>
+      <div>
+        <strong>Healico Rule Blog</strong>
+        <span>通用站点规则 · 自包含示例 · 离线验证</span>
+      </div>
+    </div>
+    <nav class="site-nav" aria-label="页面导航">
+      <a href="#quick-start">快速开始</a>
+      <a href="#selectors">选择器</a>
+      <a href="#pipeline">数据流</a>
+      <a href="test-site/">测试站点</a>
+      <a href="rule-demo.json">规则 JSON</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <article>
+    <header>
+      <div class="eyebrow">工程指南</div>
+      <h1>Healico 站点规则怎么写：从一条列表到完整章节</h1>
+      <p class="meta"><time datetime="2026-09-19">2026-09-19</time> · Healico 规则引擎</p>
+    </header>
+
+    <p>Healico 的通用站点规则是一份声明式 JSON：它告诉引擎“请求哪个地址、从哪里取列表、如何进入详情、如何翻章节、如何拿图片”。规则本身不包含可执行代码，也不需要修改应用源码。本文只使用本地测试地址和保留域名，不包含任何真实外部站点、凭据或追踪脚本。</p>
+
+    <div class="notice">
+      <strong>边界提醒：</strong>规则只用于你有权访问的内容。不要把 Cookie、Token、账号密码、签名密钥或私人接口参数写进可分享规则；不要用规则绕过访问控制、验证码或版权限制。
+    </div>
+
+    <section id="quick-start">
+      <h2>1. 最小可运行规则</h2>
+      <p>先让列表跑通，再逐步补搜索、详情和章节。一个最小规则只需要站点信息、入口地址和列表解析：</p>
+<pre><code>{
+  "name": "本地规则演示",
+  "domain": "127.0.0.1:8787",
+  "indexUrl": "http://127.0.0.1:8787/api/books?page={page:1}",
+  "indexRule": {
+    "item": { "selector": "$.payload.books" },
+    "idCode": { "selector": "$.key" },
+    "title": { "selector": "$.label" },
+    "cover": { "selector": "$.cover" },
+    "nextPageUrl": { "selector": "$.links.next" }
+  }
+}</code></pre>
+      <p><code>item</code> 指向数组；<code>idCode</code>、<code>title</code>、<code>cover</code> 在每个数组元素内求值；<code>nextPageUrl</code> 回到响应根对象求值。这个“容器 / 条目”的层级关系是写规则时最容易出错的地方。</p>
+    </section>
+
+    <section id="selectors">
+      <h2>2. 选择器的五个字段</h2>
+      <p>每个字段都是一个选择器对象，支持五个可选属性：</p>
+      <table>
+        <thead><tr><th>属性</th><th>作用</th><th>示例</th></tr></thead>
+        <tbody>
+          <tr><td><code>selector</code></td><td>JSONPath 或 CSS 选择器；<code>this</code> 表示当前条目</td><td><code>$.title</code>、<code>article h1</code></td></tr>
+          <tr><td><code>function</code></td><td>提取方式：<code>text</code>、<code>attr</code>、<code>html</code></td><td><code>attr</code></td></tr>
+          <tr><td><code>param</code></td><td><code>attr</code> 需要的属性名，可用逗号表示回退</td><td><code>data-src, src</code></td></tr>
+          <tr><td><code>regex</code></td><td>从提取结果中捕获内容</td><td><code>第(\\d+)话</code></td></tr>
+          <tr><td><code>replacement</code></td><td>重组结果，<code>$1</code> 引用捕获组</td><td><code>第 $1 章</code></td></tr>
+        </tbody>
+      </table>
+      <p>JSONPath 当前支持 <code>$</code>、<code>$.field</code>、<code>$['field']</code> 和数组下标；选择器指向数组时引擎会自动迭代。CSS 模式适合 HTML 响应，例如：</p>
+<pre><code>{
+  "item": { "selector": "main .book" },
+  "idCode": { "selector": "[data-key]", "function": "attr", "param": "data-key" },
+  "title": { "selector": "h2", "function": "text" },
+  "cover": { "selector": "img", "function": "attr", "param": "data-src, src" }
+}</code></pre>
+    </section>
+
+    <section id="pipeline">
+      <h2>3. 四个阶段如何衔接</h2>
+      <div class="pipeline" aria-label="规则数据流">
+        <div class="step"><strong>index</strong><span>首页 / 分类列表</span></div>
+        <div class="step"><strong>search</strong><span>关键词搜索</span></div>
+        <div class="step"><strong>detail</strong><span>作品详情与章节目录</span></div>
+        <div class="step"><strong>gallery</strong><span>章节图片或媒体</span></div>
+      </div>
+      <p>URL 模板支持 <code>{page:1}</code>、<code>{keyword:}</code>、<code>{idCode:}</code>、<code>{cidCode:}</code>、<code>{domain:}</code>。列表拿到 <code>idCode</code> 后会替换进 <code>detailUrl</code>；章节拿到 <code>cidCode</code> 后会替换进 <code>galleryUrl</code>。</p>
+      <p>详情里的章节可以来自页面本身，也可以来自独立接口。独立接口的写法是：</p>
+<pre><code>"detailRule": {
+  "title": { "selector": "$.book.label" },
+  "desc": { "selector": "$.book.summary" },
+  "chaptersApi": "/api/books/{idCode:}/chapters",
+  "chaptersApiRule": {
+    "maxPages": 20,
+    "chapterRule": {
+      "item": { "selector": "$.payload.entries" },
+      "idCode": { "selector": "$.key" },
+      "title": { "selector": "$.label" },
+      "url": { "selector": "$.href" }
+    },
+    "nextPageUrl": { "selector": "$.links.next" }
+  }
+}</code></pre>
+      <p><code>chaptersApiRule</code> 是响应容器，真正的章节字段放在其中的 <code>chapterRule</code>。如果接口没有下一页，返回 <code>null</code> 或空字符串即可结束分页。</p>
+    </section>
+
+    <section>
+      <h2>4. 请求头与分页</h2>
+      <p>公共请求头写在 <code>httpHeaders</code>，阶段请求头使用 <code>indexHTTPHeaders</code>、<code>searchHTTPHeaders</code>、<code>detailHTTPHeaders</code>、<code>galleryHTTPHeaders</code>，同名阶段值会覆盖公共值。图片和媒体可分别使用 <code>imageHTTPHeaders</code>、<code>videoHTTPHeaders</code>。</p>
+      <div class="callout">
+        <strong>安全原则：</strong>请求头里只放公开协商字段。凭据属于当前设备，不属于可分享规则；如果必须登录，应由应用内的账号流程处理，而不是把敏感值硬编码到 JSON。
+      </div>
+    </section>
+
+    <section>
+      <h2>5. 本地测试站点</h2>
+      <p>仓库内置一个零依赖 Node 测试站点，提供列表、搜索、详情、章节、图片分页和 SVG 封面接口。它能验证规则的数据流，不需要连接任何外部服务：</p>
+<pre><code>node scripts/serve-blog.cjs
+# 打开 http://127.0.0.1:8787/
+# 规则文件：site/rule-demo.json</code></pre>
+      <p>测试站点的人类界面在 <a href="test-site/">test-site/</a>，接口响应与规则示例完全对应。想看下一页、空搜索、章节分页等边界，只需要调整本地脚本里的数据，不用改动应用。</p>
+    </section>
+
+    <section>
+      <h2>6. 完整规则示例</h2>
+      <p>下面是可直接下载并导入本地测试的完整规则。它只访问 <code>127.0.0.1</code>，不包含凭据：</p>
+      <div class="action-row">
+        <a class="button primary" href="rule-demo.json" download>下载 rule-demo.json</a>
+        <a class="button" href="test-site/">打开测试站点</a>
+      </div>
+<pre><code>{
+  "name": "本地规则演示",
+  "domain": "127.0.0.1:8787",
+  "indexUrl": "http://127.0.0.1:8787/api/books?page={page:1}",
+  "searchUrl": "http://127.0.0.1:8787/api/search?q={keyword:}&amp;page={page:1}",
+  "detailUrl": "http://127.0.0.1:8787/api/books/{idCode:}",
+  "galleryUrl": "http://127.0.0.1:8787/api/chapters/{cidCode:}/images?page={page:1}",
+  "httpHeaders": { "Accept": "application/json" },
+  "indexRule": {
+    "item": { "selector": "$.payload.books" },
+    "idCode": { "selector": "$.key" },
+    "title": { "selector": "$.label" },
+    "cover": { "selector": "$.cover" },
+    "nextPageUrl": { "selector": "$.links.next" }
+  },
+  "searchRule": {
+    "item": { "selector": "$.payload.books" },
+    "idCode": { "selector": "$.key" },
+    "title": { "selector": "$.label" },
+    "cover": { "selector": "$.cover" },
+    "nextPageUrl": { "selector": "$.links.next" }
+  },
+  "detailRule": {
+    "title": { "selector": "$.book.label" },
+    "desc": { "selector": "$.book.summary" },
+    "chaptersApi": "/api/books/{idCode:}/chapters",
+    "chaptersApiRule": {
+      "maxPages": 20,
+      "chapterRule": {
+        "item": { "selector": "$.payload.entries" },
+        "idCode": { "selector": "$.key" },
+        "title": { "selector": "$.label" },
+        "url": { "selector": "$.href" }
+      },
+      "nextPageUrl": { "selector": "$.links.next" }
+    }
+  },
+  "galleryRule": {
+    "item": { "selector": "$.payload.pictures" },
+    "image": { "selector": "$.original" },
+    "nextPageUrl": { "selector": "$.links.next" }
+  }
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>7. 调试顺序</h2>
+      <div class="card-grid">
+        <div class="card"><h3>先列表</h3><p>确认 <code>item</code>、<code>idCode</code>、<code>title</code>。列表为空时优先检查容器层级。</p></div>
+        <div class="card"><h3>再详情</h3><p>用一个固定 <code>idCode</code> 请求详情，确认标题、简介和章节接口。</p></div>
+        <div class="card"><h3>再图片</h3><p>确认 <code>galleryUrl</code>、图片字段和分页结束条件。</p></div>
+        <div class="card"><h3>最后搜索</h3><p>补 <code>searchUrl</code> 与 <code>searchRule</code>，测试空结果和第二页。</p></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>8. 给协作者的规则编写 Skill</h2>
+      <p>如果你想让其他人在自己的编程助手里复用这套流程，可以下载本站提供的 <code>healico-rule-author</code> Skill。它只包含文本说明，不包含可执行代码或外部请求。</p>
+      <div class="action-row">
+        <a class="button" href="downloads/healico-rule-author/SKILL.md" download>下载 SKILL.md</a>
+      </div>
+      <p>安装时创建目录 <code>$CODEX_HOME/skills/healico-rule-author/</code>，把下载的文件保存为其中的 <code>SKILL.md</code>。Skill 会提醒协作者使用当前通用格式、避免凭据、优先本地测试并运行规则校验。</p>
+    </section>
+  </article>
+</main>
+
+<footer>
+  <div class="wrap footer-inner">
+    <p>Healico 规则博客 · 自包含静态页面 · 无外部脚本、无统计、无追踪。</p>
+  </div>
+</footer>
+</body>
+</html>

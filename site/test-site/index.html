@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Healico 本地测试站点</title>
+  <meta name="description" content="用于验证 Healico 站点规则的本地示例站点。">
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<header class="page-header">
+  <div class="wrap header-inner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">T</div>
+      <div><strong>Healico 本地测试站点</strong><span>离线数据 · 仅供规则验证</span></div>
+    </div>
+    <nav class="site-nav" aria-label="页面导航">
+      <a href="../">返回指南</a>
+      <a href="../rule-demo.json">规则 JSON</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+  <article>
+    <header>
+      <div class="eyebrow">Offline fixture</div>
+      <h1>规则测试站点</h1>
+      <p class="meta">这个页面展示本地 JSON 接口中的合成数据，用于检查字段层级和分页逻辑。</p>
+    </header>
+    <p>启动本地服务后，下列接口会返回与页面一致的数据：</p>
+    <ul>
+      <li><code>/api/books?page=1</code> — 列表第一页</li>
+      <li><code>/api/search?q=星&amp;page=1</code> — 搜索</li>
+      <li><code>/api/books/star-atlas</code> — 详情</li>
+      <li><code>/api/books/star-atlas/chapters</code> — 章节目录</li>
+      <li><code>/api/chapters/star-1/images?page=1</code> — 图片第一页</li>
+    </ul>
+    <h2>作品列表</h2>
+    <div class="demo-shelf">
+      <article class="demo-book">
+        <div class="demo-cover" aria-hidden="true">星图<br>旅记</div>
+        <div class="demo-book-body">
+          <h3>星图旅记</h3>
+          <p>idCode: star-atlas · 12 章</p>
+          <div class="chips"><span>科幻</span><span>旅行</span><span>本地测试</span></div>
+        </div>
+      </article>
+      <article class="demo-book">
+        <div class="demo-cover" aria-hidden="true">纸上<br>灯塔</div>
+        <div class="demo-book-body">
+          <h3>纸上灯塔</h3>
+          <p>idCode: paper-lighthouse · 8 章</p>
+          <div class="chips"><span>治愈</span><span>日常</span><span>本地测试</span></div>
+        </div>
+      </article>
+    </div>
+    <h2>响应片段</h2>
+<pre><code>{
+  "payload": {
+    "books": [
+      {
+        "key": "star-atlas",
+        "label": "星图旅记",
+        "cover": "http://127.0.0.1:8787/api/cover/star-atlas"
+      }
+    ]
+  },
+  "links": { "next": "/api/books?page=2" }
+}</code></pre>
+  </article>
+</main>
+<footer>
+  <div class="wrap footer-inner"><p>本地测试数据 · 不代表任何真实站点或作品。</p></div>
+</footer>
+</body>
+</html>
