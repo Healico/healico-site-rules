@@ -7,7 +7,7 @@ const path = require('node:path');
 const os = require('node:os');
 
 const repoRoot = path.resolve(__dirname, '..');
-const siteRoot = path.join(repoRoot, 'site');
+const siteRoot = path.join(repoRoot, 'docs/public');
 const skillPath = path.join(repoRoot, 'skills/healico-rule-author/SKILL.md');
 const defaultPort = Number(process.env.PORT || 8787);
 const args = new Set(process.argv.slice(2));

@@ -1,11 +1,14 @@
-name: Deploy rule blog
+name: Deploy rule wiki
 
 on:
   push:
     branches: [main]
     paths:
-      - 'site/**'
+      - 'docs/**'
       - 'skills/healico-rule-author/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/deploy-rule-blog.yml'
   workflow_dispatch:
 
@@ -29,20 +32,27 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build wiki
+        run: npm run docs:build
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
 
-      - name: Prepare downloadable skill
-        run: |
-          mkdir -p site/downloads/healico-rule-author
-          cp skills/healico-rule-author/SKILL.md site/downloads/healico-rule-author/SKILL.md
-
-      - name: Upload site artifact
+      - name: Upload wiki artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: docs/.vitepress/dist
 
       - name: Deploy to Pages
         id: deployment

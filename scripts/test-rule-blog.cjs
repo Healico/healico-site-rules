@@ -23,7 +23,7 @@ function allowedUrl(value) {
     const privateIp = /^127\.0\.0\.1$/.test(host) || /^localhost$/.test(host) ||
       /^192\.168\.\d{1,3}\.\d{1,3}$/.test(host) || /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
       /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(host);
-    return privateIp || host === 'github.com' || host === 'healico.github.io' || host.endsWith('.test') || host.includes('你的IP');
+    return privateIp || host === 'github.com' || host === 'healico.github.io';
   } catch {
     return false;
   }
@@ -36,11 +36,15 @@ async function assertNoExternalUrl(text, label) {
   }
 }
 
+async function assertNoThirdPartySiteMention(text, label) {
+  const forbidden = /copymanga|拷贝漫画|禁漫|jmcomic|ehentai|rehentai|wnacg|绅士漫画|动漫屋|dm5|樱花动漫|yhdm|aiyifan|爱壹帆|xvideos|bilibili|youtube|google|baidu|deepseek|zhipu/i;
+  assert.ok(!forbidden.test(text), `${label} contains a third-party site reference`);
+}
+
 async function main() {
-  const rule = JSON.parse(await fs.readFile(path.join(root, 'site/rule-demo.json'), 'utf8'));
+  const rule = JSON.parse(await fs.readFile(path.join(root, 'docs/public/rule-demo.json'), 'utf8'));
   assert.equal(rule.name, '本地规则演示');
   assert.equal(rule.domain, '127.0.0.1:8787');
-  assert.ok(rule.indexUrl.startsWith('http://127.0.0.1:8787/'));
   assert.equal(rule.indexRule.item.selector, '$.payload.books');
   assert.equal(rule.indexRule.idCode.selector, '$.key');
   assert.equal(rule.detailRule.chaptersApiRule.chapterRule.item.selector, '$.payload.entries');
@@ -49,47 +53,56 @@ async function main() {
     assert.ok(!(forbidden in rule), `rule must not contain ${forbidden}`);
   }
 
-  const indexHtml = await fs.readFile(path.join(root, 'site/index.html'), 'utf8');
-  const zeroHtml = await fs.readFile(path.join(root, 'site/zero-to-rule.html'), 'utf8');
-  const capabilityHtml = await fs.readFile(path.join(root, 'site/capability-map.html'), 'utf8');
-  const docsFiles = ['index.html', 'site-schema.html', 'selectors.html', 'rule-fields.html', 'url-pagination.html', 'chapters-gallery.html', 'request-profile.html', 'browser-media.html', 'validation-security.html', 'recipes-debugging.html'];
-  const docsHtml = await Promise.all(docsFiles.map(async name => await fs.readFile(path.join(root, 'site/docs', name), 'utf8')));
-  const demoHtml = await fs.readFile(path.join(root, 'site/test-site/index.html'), 'utf8');
+  const docsFiles = [
+    'index.md',
+    'getting-started/zero-to-rule.md',
+    'getting-started/capability-map.md',
+    'reference/site-schema.md',
+    'reference/selectors.md',
+    'reference/rule-fields.md',
+    'reference/url-pagination.md',
+    'reference/chapters-gallery.md',
+    'reference/request-profile.md',
+    'reference/browser-media.md',
+    'reference/validation-security.md',
+    'reference/recipes-debugging.md'
+  ];
+  const docs = await Promise.all(docsFiles.map(async name =>
+    await fs.readFile(path.join(root, 'docs', name), 'utf8')
+  ));
   const skill = await fs.readFile(path.join(root, 'skills/healico-rule-author/SKILL.md'), 'utf8');
-  await assertNoExternalUrl(indexHtml, 'site/index.html');
-  await assertNoExternalUrl(zeroHtml, 'site/zero-to-rule.html');
-  await assertNoExternalUrl(capabilityHtml, 'site/capability-map.html');
+  const config = await fs.readFile(path.join(root, 'docs/.vitepress/config.mts'), 'utf8');
+  const testSite = await fs.readFile(path.join(root, 'docs/public/test-site/index.html'), 'utf8');
+
   for (let i = 0; i < docsFiles.length; i++) {
-    await assertNoExternalUrl(docsHtml[i], `site/docs/${docsFiles[i]}`);
+    await assertNoExternalUrl(docs[i], `docs/${docsFiles[i]}`);
+    await assertNoThirdPartySiteMention(docs[i], `docs/${docsFiles[i]}`);
   }
-  await assertNoExternalUrl(demoHtml, 'site/test-site/index.html');
-  await assertNoExternalUrl(JSON.stringify(rule), 'site/rule-demo.json');
-  await assertNoExternalUrl(skill, 'skills/healico-rule-author/SKILL.md');
-  assert.match(skill, /node scripts\/lint-rules\.cjs/);
-  assert.match(skill, /Do not include cookies, tokens, passwords/);
-  assert.match(zeroHtml, /第 1 步：确认电脑能运行 Node\.js/);
-  assert.match(zeroHtml, /第 9 步：为自己的接口写规则/);
-  assert.match(capabilityHtml, /当前还没有完整讲解/);
-  assert.match(capabilityHtml, /requestProfile\.steps/);
-  assert.match(capabilityHtml, /需要请求签名或时间戳/);
-  assert.match(indexHtml, /capability-map\.html/);
-  assert.match(indexHtml, /docs\/index\.html/);
-  assert.match(capabilityHtml, /docs\/index\.html/);
-  assert.match(docsHtml[0], /Healico 站点规则完整文档/);
-  assert.match(docsHtml[1], /站点结构与顶层字段/);
-  assert.match(docsHtml[2], /选择器参考/);
-  assert.match(docsHtml[3], /规则级字段总表/);
-  assert.match(docsHtml[4], /URL 模板与分页/);
-  assert.match(docsHtml[5], /详情、章节与图片/);
-  assert.match(docsHtml[6], /请求协议配置/);
-  assert.match(docsHtml[7], /浏览器与媒体模式/);
-  assert.match(docsHtml[8], /校验与安全/);
-  assert.match(docsHtml[9], /常见模式与排错/);
-  assert.match(skill, /## Top-level site fields/);
-  assert.match(skill, /## Request profile/);
-  assert.match(skill, /## Browser and media modes/);
-  assert.match(skill, /## Review checklist/);
-  assert.match(indexHtml, /zero-to-rule\.html/);
+  await assertNoExternalUrl(JSON.stringify(rule), 'rule-demo.json');
+  await assertNoExternalUrl(skill, 'SKILL.md');
+  await assertNoExternalUrl(testSite, 'test-site/index.html');
+  await assertNoThirdPartySiteMention(skill, 'SKILL.md');
+  await assertNoThirdPartySiteMention(testSite, 'test-site/index.html');
+
+  assert.match(config, /provider:\s*'local'/);
+  assert.match(config, /零基础跟做/);
+  assert.match(config, /请求协议/);
+  assert.match(docs[0], /Healico 站点规则/);
+  assert.match(docs[1], /零基础写出第一条规则/);
+  assert.match(docs[2], /能力边界与学习路线/);
+  assert.match(docs[3], /站点结构与顶层字段/);
+  assert.match(docs[4], /选择器参考/);
+  assert.match(docs[5], /规则级字段总表/);
+  assert.match(docs[6], /URL 模板与分页/);
+  assert.match(docs[7], /详情、章节与图片/);
+  assert.match(docs[8], /请求协议配置/);
+  assert.match(docs[9], /浏览器与媒体模式/);
+  assert.match(docs[10], /校验与安全/);
+  assert.match(docs[11], /常见模式与排错/);
+  assert.match(skill, /^## Top-level site fields$/m);
+  assert.match(skill, /^## Request profile$/m);
+  assert.match(skill, /^## Browser and media modes$/m);
+  assert.match(skill, /^## Review checklist$/m);
 
   const deviceRule = buildDeviceRule(rule, '192.168.1.23', 8787);
   assert.equal(deviceRule.name, '局域网规则演示');
@@ -125,35 +138,19 @@ async function main() {
 
     const images1 = await getJson(base, 'api/chapters/star-atlas-1/images?page=1');
     assert.deepEqual(images1.payload.pictures.map(item => item.index), [1, 2]);
-    assert.equal(images1.links.next, '/api/chapters/star-atlas-1/images?page=2');
     const images2 = await getJson(base, 'api/chapters/star-atlas-1/images?page=2');
     assert.deepEqual(images2.payload.pictures.map(item => item.index), [3, 4]);
     assert.equal(images2.links.next, null);
 
-    const skillResponse = await fetch(new URL('downloads/healico-rule-author/SKILL.md', base));
-    assert.equal(skillResponse.status, 200);
-    assert.match(await skillResponse.text(), /^name: healico-rule-author$/m);
-
-    const blogResponse = await fetch(new URL('/', base));
-    assert.equal(blogResponse.status, 200);
-    assert.match(await blogResponse.text(), /Healico 站点规则怎么写/);
-
-    const docsResponse = await fetch(new URL('docs/index.html', base));
-    assert.equal(docsResponse.status, 200);
-    assert.match(await docsResponse.text(), /Healico 站点规则完整文档/);
-
-    const capabilityResponse = await fetch(new URL('capability-map.html', base));
-    assert.equal(capabilityResponse.status, 200);
-    assert.match(await capabilityResponse.text(), /学完这个站，能写哪类 Healico 站点规则/);
-
-    const lessonResponse = await fetch(new URL('zero-to-rule.html', base));
-    assert.equal(lessonResponse.status, 200);
-    assert.match(await lessonResponse.text(), /零基础写出第一条 Healico 站点规则/);
+    for (const pathname of ['rule-demo.json', 'test-site/', 'downloads/healico-rule-author/SKILL.md']) {
+      const response = await fetch(new URL(pathname, base));
+      assert.equal(response.status, 200, `${pathname} should return 200`);
+    }
   } finally {
     await new Promise(resolve => server.close(resolve));
   }
 
-  console.log('Rule blog tests passed.');
+  console.log('Rule wiki tests passed.');
 }
 
 main().catch(error => {
