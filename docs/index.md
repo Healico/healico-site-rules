@@ -14,7 +14,7 @@ hero:
       link: /reference/site-schema
     - theme: alt
       text: 下载规则示例
-      link: /rule-demo.json
+      link: /healico-site-rules/rule-demo.json
 
 features:
   - icon: 🧭
